@@ -1,0 +1,70 @@
+# ─────────────────────────────────────────────────────────────
+# Secrets — NEVER commit real credentials. Values live in a local
+# .env (untracked) and in GitHub Actions Secrets in production.
+# ─────────────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.env
+env/
+.envrc
+
+# Credential / token files (Shopify admin token, Meta access token,
+# Google Ads developer + refresh tokens, Google service-account key)
+*.pem
+*.key
+*.p12
+*.pfx
+*_token*
+*token.json
+*credentials*.json
+*client_secret*.json
+service-account*.json
+service_account*.json
+gcp-*.json
+google-*.json
+.secrets/
+secrets/
+
+# ─────────────────────────────────────────────────────────────
+# Real business data pulled from the APIs — contains revenue /
+# customer numbers. Kept local for development only.
+# ─────────────────────────────────────────────────────────────
+data/
+*.csv
+*.parquet
+!data/.gitkeep
+
+# ─────────────────────────────────────────────────────────────
+# Python
+# ─────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+ENV/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# ─────────────────────────────────────────────────────────────
+# Editors / OS
+# ─────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─────────────────────────────────────────────────────────────
+# Logs / run artifacts
+# ─────────────────────────────────────────────────────────────
+*.log
+logs/
