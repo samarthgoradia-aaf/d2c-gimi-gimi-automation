@@ -6,11 +6,17 @@ variables (see .env.example). This file is safe to read and safe to commit.
 If a campaign name, account ID, or the run window ever needs to change, this
 is the only file you touch.
 """
+import os
 
 # ─── The Google Sheet this pipeline writes into ─────────────────────────────
 # Taken from the sheet URL:
 # https://docs.google.com/spreadsheets/d/<THIS PART IS THE ID>/edit
-SPREADSHEET_ID = "1-v-zWqlLKVHJlL7X2hIfaxmVDl21VtZI1gOhJDd40sg"
+#
+# The default below is the LIVE tracker. To run against a test copy instead,
+# set the SPREADSHEET_ID environment variable (in .env for local runs, or as a
+# GitHub Actions secret) — it overrides this without a code change.
+LIVE_SPREADSHEET_ID = "1-v-zWqlLKVHJlL7X2hIfaxmVDl21VtZI1gOhJDd40sg"
+SPREADSHEET_ID = os.environ.get("SPREADSHEET_ID", "").strip() or LIVE_SPREADSHEET_ID
 
 # ─── Shopify ───────────────────────────────────────────────────────────────
 # The *.myshopify.com domain, NOT the public gimigimifoods.com address.
