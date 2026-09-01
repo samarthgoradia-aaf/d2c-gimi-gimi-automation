@@ -5,3 +5,6 @@ gspread>=6.1
 google-auth>=2.30
 python-dotenv>=1.0
 tzdata>=2024.1
+# Meta Ads goes through Composio (it manages the Facebook OAuth). Pinned to a
+# minor range because Composio's SDK changes often.
+composio>=0.21,<0.22

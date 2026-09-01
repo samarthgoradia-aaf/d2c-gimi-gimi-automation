@@ -51,6 +51,10 @@ You need four things. **None of them ever go into the code.** For testing they
 go in a local file called `.env`; for the daily run they go into GitHub's
 encrypted secret store. The names are the same in both places.
 
+> **Which service does what:** Shopify is read directly with an Admin API token;
+> Meta Ads is read through **Composio** (so there's no Meta token to make);
+> the Google Sheet is written with a service-account key; email is plain SMTP.
+
 > ⚠️ **If any of these values is ever pasted into a chat, an email, a Slack
 > message, or committed to the repo by accident — regenerate it immediately on
 > the platform it came from.** Each one can spend money or read customer data.
@@ -82,15 +86,25 @@ A service account is a robot Google account the script logs in as.
 4. **Install app** → then **Reveal token once** and copy the **Admin API access
    token** (starts with `shpat_`). That is `SHOPIFY_ADMIN_TOKEN`.
 
-### 3. Meta (Facebook) access token
+### 3. Meta (Facebook) Ads — through Composio
 
-1. <https://business.facebook.com/> → **Business settings → Users → System
-   users**.
-2. **Add** a system user (name e.g. "Tracker"), role **Admin** or **Employee**.
-3. **Add assets** → **Ad accounts** → select the Gimi Gimi ad account
-   (`act_868396352281563`) → give **View performance** (read) access.
-4. **Generate new token** → pick the app → tick **`ads_read`** → generate.
-   Set expiry to **Never** if offered. That is `META_ACCESS_TOKEN`.
+Meta ad data comes via **Composio**, which owns the Facebook login and keeps it
+refreshed. There is **no Meta access token to generate** (that step was the
+sticking point doing it directly).
+
+1. In the **Composio dashboard**, get your **API key** → this is the
+   `COMPOSIO_API_KEY` secret.
+2. In Composio, connect the **Meta Ads** toolkit: choose it, run the OAuth
+   flow, and sign in with the Facebook account that can see ad account
+   `act_868396352281563`.
+3. Note the **user id / entity** the connection is created under. Put the same
+   value in the `COMPOSIO_USER_ID` secret (default in the code is `gimi-gimi` —
+   easiest to just use that when connecting).
+4. Confirm the connection shows **Active** in the dashboard.
+
+Then run `python probe_composio.py` once (locally, with the two values in
+`.env`) — it prints the exact tool schema and a sample response so the Meta
+fetch can be locked down.
 
 ### 4. Email sending (SMTP)
 
@@ -120,13 +134,15 @@ Repo → **Settings** → **Secrets and variables** → **Actions** →
 |---|---|
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | the entire contents of the service-account `.json` file |
 | `SHOPIFY_ADMIN_TOKEN` | the `shpat_...` token |
-| `META_ACCESS_TOKEN` | the Meta system-user token |
+| `COMPOSIO_API_KEY` | your Composio dashboard API key |
+| `COMPOSIO_USER_ID` | the user/entity the Meta Ads connection is under (e.g. `gimi-gimi`) |
 | `SMTP_HOST` | `smtp.gmail.com` |
 | `SMTP_PORT` | `587` |
 | `SMTP_USER` | sending gmail address |
 | `SMTP_PASSWORD` | the app password |
 | `EMAIL_FROM` | sending gmail address |
 | `EMAIL_TO` | `parth@mealofthemoment.com` |
+| `SPREADSHEET_ID` | *(optional)* a test-copy sheet id while setting up; delete it to go live |
 
 **To rotate any of them later:** regenerate the value on the platform, then edit
 the matching secret here. Nothing in the code changes.

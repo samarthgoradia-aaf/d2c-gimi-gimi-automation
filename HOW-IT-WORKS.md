@@ -37,8 +37,11 @@ Words that show up in the sheet:
 ## 2. The pipeline as a story
 
 Every morning at 10:45 a timer on GitHub's servers wakes up. It sends two
-messengers out: one to Shopify, one to Meta. Each brings back a table of
-numbers for the last 35 days. A checker looks at what came back — are there
+messengers out: one to Shopify, one to Meta (the Meta one goes through a
+service called Composio, which holds the Facebook login so we don't have to
+manage a Meta token). Each brings back a table of numbers for the last 35
+days. The Meta side has to ask one day at a time, because Meta's tool has no
+"give me every day" option — so that step makes about 36 small requests. A checker looks at what came back — are there
 roughly 35 days? Any negative spend? Zero everything? If something's off, it
 stops here and emails you; the sheet is left alone.
 
@@ -98,8 +101,10 @@ would stay formula-driven. That work is listed in
 | `config.py` | — | all the fixed settings: sheet ID, ad account, campaign names, 35-day window, tab names, column order |
 | `utils.py` | — | shared helpers: the IST clock, the date window, the `.env` loader, logging |
 | `fetch_shopify.py` | Shopify Admin token | one row per day: `date, sessions, atc, checkouts, orders, revenue` |
-| `fetch_meta.py` | Meta access token | one row per ad per day, 20 columns (`date … p100`) |
+| `fetch_meta.py` | Composio API key (Composio holds the Facebook login) | one row per ad per day, 20 columns (`date … p100`) |
+| `composio_bridge.py` | Composio API key | shared helper: runs one Composio tool, returns its data or a plain-language error |
 | `fetch_gads.py` | — | an empty list (v1). Later: Google Ads rows |
+| `probe_composio.py` | Composio API key | prints the Meta insights tool schema + a sample response — a setup/debug aid, not part of the daily run |
 | `write_sheets.py` | the rows above + the service-account key | the three `RAW_` tabs, cleared and rewritten |
 | `email_report.py` | SMTP settings | the daily OK / FAILED email |
 | `run_pipeline.py` | — | runs all of the above in order; exits red on failure |
@@ -132,7 +137,9 @@ campaigns). v2 adds a visible flag for this; v1 leaves it as-is to match today.
 
 | Fragile thing | Where | What happens | Fix |
 |---|---|---|---|
-| **Access tokens expire / get revoked** | GitHub secrets | "FAILED" email, sheet untouched | regenerate on the platform, update the secret (README step "Rotate") |
+| **Access tokens / keys expire or get revoked** | GitHub secrets | "FAILED" email, sheet untouched | regenerate on the platform, update the secret (README step "Rotate") |
+| **The Composio connection drops** (someone disconnects Meta Ads, or Composio has an outage) | Composio dashboard | Meta step fails; `TROUBLESHOOTING.md → Composio` | reconnect the Meta Ads toolkit in the Composio dashboard |
+| **The Composio SDK changes** (they release often) | `requirements.txt` pins `composio` to `>=0.21,<0.22` | a version bump could change argument or response names | run `python probe_composio.py`, compare, adjust `fetch_meta.py`; or fall back to the direct API path (set `META_ACCESS_TOKEN`, unset `COMPOSIO_API_KEY`) |
 | **ShopifyQL analytics access** | `fetch_shopify.py` | Shopify step fails with a GraphQL error | see `TROUBLESHOOTING.md → Shopify analytics`; this is the integration most likely to need a one-off tweak |
 | **A platform renames a field** | `fetch_meta.py` (the `actions` mapping) | a column comes through as 0 | update the `action_type` name in `fetch_meta.py` |
 | **Core campaign renamed / new one added** | `config.CORE_META_CAMPAIGNS` | Shopify "Spends" silently drops or misses it | add / rename in that list |
@@ -164,3 +171,10 @@ campaigns). v2 adds a visible flag for this; v1 leaves it as-is to match today.
 - The pipeline reads `today` in **IST**, not UTC, so the "last day" in the data
   is the correct Indian calendar day.
 - Runs and their logs are kept under the repo's **Actions** tab for 90 days.
+- **Meta path switch:** `fetch_meta.py` uses Composio when `COMPOSIO_API_KEY`
+  is set. If instead `META_ACCESS_TOKEN` is set (and `COMPOSIO_API_KEY` is
+  not), it falls back to calling Meta's Marketing API directly in one shot.
+  Both paths produce identical rows.
+- The git tag **`v0.2.0`** is the version before Composio, when both Shopify
+  and Meta used direct APIs — useful reference if the Composio path ever
+  needs to be abandoned entirely.

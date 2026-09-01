@@ -79,28 +79,42 @@ and see what actually came back.
 
 ---
 
-## 4. Meta token — "Meta rejected the access token"
+## 4. Composio / Meta — "Composio could not run 'METAADS_GET_INSIGHTS'" or "COMPOSIO_API_KEY is not set"
 
-`META_ACCESS_TOKEN` expired, was revoked, or lost `ads_read` / access to the ad
-account.
+Meta Ads data comes through Composio. Things to check, in order:
 
-**Fix:** business.facebook.com → Business settings → Users → System users →
-your system user → confirm the Gimi Gimi ad account is still assigned with at
-least read access → **Generate new token** with `ads_read` (expiry: Never).
-Update the `META_ACCESS_TOKEN` secret in GitHub.
+1. **`COMPOSIO_API_KEY is not set`** — add the key (Composio dashboard) to the
+   GitHub secret `COMPOSIO_API_KEY` (and your local `.env`).
+2. **"the toolkit is connected (Active) ... for user 'gimi-gimi'"** — open the
+   Composio dashboard → connections. The **Meta Ads** toolkit must show
+   **Active**, under the same user id as the `COMPOSIO_USER_ID` secret
+   (default `gimi-gimi`). If it's missing or expired, reconnect it (OAuth,
+   sign in with the Facebook account that can see `act_868396352281563`).
+3. **Argument or response errors** (e.g. "unexpected field", a KeyError after a
+   `composio` version bump) — run `python probe_composio.py` locally; it prints
+   the current tool schema and a sample response. Compare against the argument
+   names in `fetch_meta.py` (`_fetch_via_composio`) and adjust.
+4. **Composio outage** — check their status page; the daily email will retry
+   tomorrow, or click **Run workflow** once it's back.
 
-> Paste this into Claude: *"My Gimi Gimi pipeline failed with 'Meta rejected the
-> access token'. Here's fetch_meta.py: [paste]. Walk me through minting a new
-> non-expiring system-user token and updating the GitHub secret."*
+**Emergency fallback to the direct Meta API:** create a Meta System User token
+with `ads_read` (business.facebook.com → Business settings → Users → System
+users → Generate new token, expiry Never), set it as the `META_ACCESS_TOKEN`
+secret, and **remove** the `COMPOSIO_API_KEY` secret. `fetch_meta.py` then
+calls Meta directly instead.
+
+> Paste this into Claude: *"My Gimi Gimi pipeline failed on the Meta/Composio
+> step with: [paste error]. Here's fetch_meta.py: [paste] and composio_bridge.py:
+> [paste]. Here's `python probe_composio.py` output: [paste]. What's wrong?"*
 
 ---
 
 ## 5. Meta empty — "Meta returned zero ad rows" / "only N distinct days" / "total spend is zero"
 
 The call worked but returned nothing useful. Causes: no spend in the window
-(unlikely), the token can see the app but not this ad account, or the campaign
-filter (`CONTAIN "GG_"`) matched nothing because campaigns were renamed off the
-`GG_` prefix.
+(unlikely), the Composio connection can reach Facebook but not this specific ad
+account, or the campaign filter (`CONTAIN "GG_"`) matched nothing because
+campaigns were renamed off the `GG_` prefix.
 
 **Check:** `python fetch_meta.py` locally, look at `data/meta.json`.
 
