@@ -1,0 +1,7 @@
+# Python packages the pipeline needs. Installed automatically by GitHub
+# Actions; for local runs do:  pip install -r requirements.txt
+requests>=2.31
+gspread>=6.1
+google-auth>=2.30
+python-dotenv>=1.0
+tzdata>=2024.1

@@ -1,0 +1,45 @@
+name: Daily tracker refresh
+
+# Runs every day and can also be started by hand from the Actions tab
+# ("Run workflow" button).
+on:
+  schedule:
+    # GitHub cron is always in UTC. India Standard Time is UTC + 5:30.
+    # 05:15 UTC  =  10:45 IST  (finishes well before 11:00 IST).
+    - cron: "15 5 * * *"
+  workflow_dispatch: {}
+
+# If a run is somehow still going when the next one starts, let the new one wait
+# rather than run two at once against the same sheet.
+concurrency:
+  group: gimi-gimi-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run the pipeline
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          SHOPIFY_ADMIN_TOKEN: ${{ secrets.SHOPIFY_ADMIN_TOKEN }}
+          META_ACCESS_TOKEN: ${{ secrets.META_ACCESS_TOKEN }}
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: python run_pipeline.py
