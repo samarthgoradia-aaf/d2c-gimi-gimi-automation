@@ -114,11 +114,22 @@ def _write_tab(sh, tab, columns, rows):
 
 
 def write_all(shopify_rows, meta_rows, gads_rows):
-    """Write all three RAW tabs. Returns the open Spreadsheet for verify()."""
+    """
+    Write the RAW tabs. Returns the open Spreadsheet for verify().
+
+    Pass None for meta_rows or gads_rows to leave that tab completely
+    untouched (used by Shopify-only mode).
+    """
     sh = _open_sheet()
     _write_tab(sh, config.RAW_SHOPIFY_TAB, config.RAW_SHOPIFY_COLUMNS, shopify_rows)
-    _write_tab(sh, config.RAW_META_TAB, config.RAW_META_COLUMNS, meta_rows)
-    _write_tab(sh, config.RAW_GADS_TAB, config.RAW_GADS_COLUMNS, gads_rows)
+    if meta_rows is None:
+        log(f"{config.RAW_META_TAB}: left unchanged (Meta off for this run)")
+    else:
+        _write_tab(sh, config.RAW_META_TAB, config.RAW_META_COLUMNS, meta_rows)
+    if gads_rows is None:
+        log(f"{config.RAW_GADS_TAB}: left unchanged")
+    else:
+        _write_tab(sh, config.RAW_GADS_TAB, config.RAW_GADS_COLUMNS, gads_rows)
     return sh
 
 

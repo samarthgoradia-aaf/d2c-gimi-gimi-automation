@@ -61,6 +61,12 @@ def _yesterday_line(shopify_rows, meta_rows):
         return "n/a"
     last = shopify_rows[-1]
     d = last["date"]
+    if meta_rows is None:
+        return (
+            f"{d}:  revenue Rs {last['revenue']:,.0f}  |  "
+            f"orders {int(last['orders'])}  |  sessions {int(last['sessions'])}  "
+            f"(Meta not refreshed this run)"
+        )
     core = _sum_spend(meta_rows, d, config.CORE_META_CAMPAIGNS)
     all_meta = _sum_spend(meta_rows, d)
     rev = last["revenue"]
